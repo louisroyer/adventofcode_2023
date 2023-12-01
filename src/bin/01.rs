@@ -64,6 +64,8 @@ mod tests {
         assert_eq!(calibration("4nineeightseven2"), Ok(42));
         assert_eq!(calibration("zoneight234"), Ok(14));
         assert_eq!(calibration("7pqrstsixteen"), Ok(76));
+        // for last digit, parse from end
+        assert_eq!(calibration("zoneight"), Ok(18));
     }
 }
 
