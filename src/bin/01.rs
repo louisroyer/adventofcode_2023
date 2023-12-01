@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 // SPDX-License-Identifier: MIT
 
-use regex::Regex;
 use std::fs::read_to_string;
 
 #[derive(Debug, PartialEq)]
@@ -80,16 +79,42 @@ fn calibration_sum<'a>(lines: impl Iterator<Item = &'a str>) -> Result<u32, Pars
 /// The calibration value can be found by combining the first digit
 /// and the last digit (in that order) to form a single two-digit number.
 fn calibration(line: &str) -> Result<u32, ParseCalibrationError> {
-    // regex for a digit (one to nine), written as an ascii digit or spelled out with letters
-    let re = Regex::new(r"([1-9]|one|two|three|four|five|six|seven|eight|nine)").unwrap();
-    let digits: Vec<&str> = re.find_iter(line).map(|m| m.as_str()).collect();
+    // digit to check for (one to nine), written as an ascii digit or spelled out with letters
+    let digits = [
+        "1", "2", "3", "4", "5", "6", "7", "8", "9", "one", "two", "three", "four", "five", "six",
+        "seven", "eight", "nine",
+    ];
 
     // first digit
-    let first = digits.first().ok_or(ParseCalibrationError)?;
+    let first = {
+        let mut old_pos = None;
+        let mut first = Err(ParseCalibrationError);
+        for digit in digits {
+            let new_pos = line.find(digit);
+            (old_pos, first) = match (new_pos, old_pos) {
+                (Some(_), None) => (new_pos, Ok(digit)), // initialization
+                (Some(new), Some(old)) if new < old => (new_pos, Ok(digit)), // update
+                (_, _) => (old_pos, first),              // keep old position
+            };
+        }
+        first
+    }?;
     let first = parse_calibration_digit(first)?;
 
     // last digit
-    let last = digits.last().ok_or(ParseCalibrationError)?;
+    let last = {
+        let mut old_pos = None;
+        let mut last = Err(ParseCalibrationError);
+        for digit in digits {
+            let new_pos = line.rfind(digit);
+            (old_pos, last) = match (new_pos, old_pos) {
+                (Some(_), None) => (new_pos, Ok(digit)), // initialization
+                (Some(new), Some(old)) if new > old => (new_pos, Ok(digit)), // update
+                (_, _) => (old_pos, last),               // keep old position
+            };
+        }
+        last
+    }?;
     let last = parse_calibration_digit(last)?;
 
     // concatenate digits
