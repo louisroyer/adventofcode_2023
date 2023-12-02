@@ -24,6 +24,7 @@ struct Bag {
 /// We only store relevant data:
 /// - the game id
 /// - the maximum number of cubes showed of each color (red, green, and blue)
+#[derive(Debug, PartialEq)]
 struct GameData {
     id: u32,
     red: u32,
@@ -124,7 +125,10 @@ fn main() {
 
     // TODO: use a buffer instead
     let sum = game_id_sum(file.lines(), bag).expect("Could not parse game records");
-    println!("{sum}");
+    println!("Sum of ids of valid games: {sum}");
+
+    let p_sum = power_sum(file.lines()).expect("Could not parse game records");
+    println!("Sum of cube power of games: {p_sum}");
 }
 
 #[cfg(test)]
@@ -191,6 +195,129 @@ mod tests {
             bag
         ));
     }
+
+    // Part 2
+    #[test]
+    fn it_game_data_from_str() {
+        assert_eq!(
+            GameData::from_str("Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green").unwrap(),
+            GameData {
+                id: 1,
+                red: 4,
+                green: 2,
+                blue: 6
+            }
+        );
+        assert_eq!(
+            GameData::from_str("Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue")
+                .unwrap(),
+            GameData {
+                id: 2,
+                red: 1,
+                green: 3,
+                blue: 4
+            }
+        );
+        assert_eq!(
+            GameData::from_str(
+                "Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red"
+            )
+            .unwrap(),
+            GameData {
+                id: 3,
+                red: 20,
+                green: 13,
+                blue: 6
+            }
+        );
+        assert_eq!(
+            GameData::from_str(
+                "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red"
+            )
+            .unwrap(),
+            GameData {
+                id: 4,
+                red: 14,
+                green: 3,
+                blue: 15,
+            }
+        );
+        assert_eq!(
+            GameData::from_str("Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green").unwrap(),
+            GameData {
+                id: 5,
+                red: 6,
+                green: 3,
+                blue: 2,
+            }
+        );
+    }
+
+    #[test]
+    fn it_cube_power() {
+        assert_eq!(
+            cube_power(GameData {
+                id: 1,
+                red: 4,
+                green: 2,
+                blue: 6
+            }),
+            48
+        );
+        assert_eq!(
+            cube_power(GameData {
+                id: 2,
+                red: 1,
+                green: 3,
+                blue: 4
+            }),
+            12
+        );
+        assert_eq!(
+            cube_power(GameData {
+                id: 3,
+                red: 20,
+                green: 13,
+                blue: 6
+            }),
+            1560
+        );
+        assert_eq!(
+            cube_power(GameData {
+                id: 4,
+                red: 14,
+                green: 3,
+                blue: 15,
+            }),
+            630
+        );
+        assert_eq!(
+            cube_power(GameData {
+                id: 5,
+                red: 6,
+                green: 3,
+                blue: 2,
+            }),
+            36
+        );
+    }
+
+    #[test]
+    fn it_power_sum() {
+        assert_eq!(
+            power_sum(
+                vec![
+                    "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green",
+                    "Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue",
+                    "Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red",
+                    "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red",
+                    "Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green",
+                ]
+                .into_iter()
+            ),
+            Ok(2286)
+        )
+    }
 }
 
 /// Returns the sum of game ids which would have been possible with this game data
@@ -211,4 +338,19 @@ fn game_id_sum<'a>(
 /// A game data is valid if maximum cubes shown is lower than number of cubes in the bag.
 fn validate(data: &GameData, bag: Bag) -> bool {
     data.red <= bag.red && data.green <= bag.green && data.blue <= bag.blue
+}
+
+/// Product of number of cubes that must have been present in a game
+fn cube_power(data: GameData) -> u32 {
+    data.red * data.green * data.blue
+}
+
+fn power_sum<'a>(lines: impl Iterator<Item = &'a str>) -> Result<u32, ParseGameDataError> {
+    lines
+        .filter(|x| !x.is_empty()) // exclude empty lines,
+        .map(|x| GameData::from_str(x)) // parse into game data,
+        .collect::<Result<Vec<GameData>, ParseGameDataError>>()?
+        .into_iter()
+        .map(|x| Ok(cube_power(x)))
+        .sum() // and sum them all
 }
