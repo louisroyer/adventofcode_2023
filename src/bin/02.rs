@@ -200,8 +200,9 @@ fn game_id_sum<'a>(
 ) -> Result<u32, ParseGameDataError> {
     lines
         .filter(|x| !x.is_empty()) // exclude empty lines,
-        // FIXME: find better than unwrap here
-        .map(|x| GameData::from_str(x).unwrap()) // parse into game data,
+        .map(|x| GameData::from_str(x)) // parse into game data,
+        .collect::<Result<Vec<GameData>, ParseGameDataError>>()?
+        .into_iter()
         .filter(|x| validate(x, bag)) // check validity of the game data according to bag content
         .map(|x| Ok(x.id)) // get bag id
         .sum() // and sum them all
