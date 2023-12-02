@@ -327,11 +327,12 @@ fn game_id_sum<'a>(
 ) -> Result<u32, ParseGameDataError> {
     lines
         .filter(|x| !x.is_empty()) // exclude empty lines,
-        .map(|x| GameData::from_str(x)) // parse into game data,
-        .collect::<Result<Vec<GameData>, ParseGameDataError>>()?
-        .into_iter()
-        .filter(|x| validate(x, bag)) // check validity of the game data according to bag content
-        .map(|x| Ok(x.id)) // get bag id
+        .map(|x| match GameData::from_str(x) {
+            // check validity of the game data according to bag content
+            Ok(v) if validate(&v, bag) => Ok(v.id), // game is valid, we add the game id
+            Ok(_) => Ok(0),                         // invalid game, we don't add the game id
+            _ => return Err(ParseGameDataError),
+        })
         .sum() // and sum them all
 }
 
@@ -349,9 +350,9 @@ fn cube_power(data: GameData) -> u32 {
 fn power_sum<'a>(lines: impl Iterator<Item = &'a str>) -> Result<u32, ParseGameDataError> {
     lines
         .filter(|x| !x.is_empty()) // exclude empty lines,
-        .map(|x| GameData::from_str(x)) // parse into game data,
-        .collect::<Result<Vec<GameData>, ParseGameDataError>>()?
-        .into_iter()
-        .map(|x| Ok(cube_power(x)))
+        .map(|x| match GameData::from_str(x) {
+            Ok(v) => Ok(cube_power(v)), // compute cube power
+            _ => return Err(ParseGameDataError),
+        })
         .sum() // and sum them all
 }
