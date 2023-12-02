@@ -345,6 +345,7 @@ fn cube_power(data: GameData) -> u32 {
     data.red * data.green * data.blue
 }
 
+/// Sum of cube power of all games
 fn power_sum<'a>(lines: impl Iterator<Item = &'a str>) -> Result<u32, ParseGameDataError> {
     lines
         .filter(|x| !x.is_empty()) // exclude empty lines,
