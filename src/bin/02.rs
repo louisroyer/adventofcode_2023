@@ -23,7 +23,7 @@ struct Bag {
 /// A game consist in taking several times a random number of cubes out of the bag.
 /// We only store relevant data:
 /// - the game id
-/// - the maximum number of cubes showed of each color (red, green, and blue)
+/// - the maximum number of cubes shown of each color (red, green, and blue)
 #[derive(Debug, PartialEq)]
 struct GameData {
     id: u32,
