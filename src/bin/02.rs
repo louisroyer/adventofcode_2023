@@ -48,7 +48,7 @@ impl FromStr for GameData {
                 .parse()
             {
                 Ok(v) => v,
-                Err(e) => return Err(ParseGameDataError),
+                Err(_) => return Err(ParseGameDataError),
             }
         };
 
@@ -162,17 +162,17 @@ mod tests {
             blue: 14,
         };
         assert!(validate(
-            GameData::from_str("Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green").unwrap(),
+            &GameData::from_str("Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green").unwrap(),
             bag
         ));
         assert!(validate(
-            GameData::from_str("Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue")
+            &GameData::from_str("Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue")
                 .unwrap(),
             bag
         ));
         assert!(!validate(
             // too many red cubes in this game
-            GameData::from_str(
+            &GameData::from_str(
                 "Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red"
             )
             .unwrap(),
@@ -180,14 +180,14 @@ mod tests {
         ));
         assert!(!validate(
             // too many blue cubes in this game
-            GameData::from_str(
+            &GameData::from_str(
                 "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red"
             )
             .unwrap(),
             bag
         ));
         assert!(validate(
-            GameData::from_str("Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green").unwrap(),
+            &GameData::from_str("Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green").unwrap(),
             bag
         ));
     }
@@ -200,13 +200,14 @@ fn game_id_sum<'a>(
 ) -> Result<u32, ParseGameDataError> {
     lines
         .filter(|x| !x.is_empty()) // exclude empty lines,
-        .map(|x| GameData::from_str(x)) // parse into game data,
+        // FIXME: find better than unwrap here
+        .map(|x| GameData::from_str(x).unwrap()) // parse into game data,
         .filter(|x| validate(x, bag)) // check validity of the game data according to bag content
-        .map(|x| x.id) // get bag id
+        .map(|x| Ok(x.id)) // get bag id
         .sum() // and sum them all
 }
 
 /// A game data is valid if maximum cubes shown is lower than number of cubes in the bag.
-fn validate(data: GameData, bag: Bag) -> bool {
+fn validate(data: &GameData, bag: Bag) -> bool {
     data.red <= bag.red && data.green <= bag.green && data.blue <= bag.blue
 }
